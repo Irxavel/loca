@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Para ti, Chiquita</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#161033;
+    --bg-deep2:#2a1650;
+    --bg-deep3:#3d1a4a;
+    --accent-pink:#ff8fab;
+    --accent-gold:#ffd166;
+    --heart-glow:#ff4d79;
+    --text-cream:#fff9f2;
+    --text-dim:#c9bfe6;
+  }
+
+  *{box-sizing:border-box;}
+
+  html,body{
+    margin:0;
+    padding:0;
+    min-height:100vh;
+    background:
+      radial-gradient(ellipse at 20% 10%, var(--bg-deep3), transparent 60%),
+      radial-gradient(ellipse at 80% 90%, var(--bg-deep2), transparent 60%),
+      var(--bg-deep);
+    color:var(--text-cream);
+    font-family:'Quicksand', sans-serif;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  #stars-bg{
+    position:fixed;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+  }
+
+  .stage{
+    position:relative;
+    z-index:1;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:32px 16px 60px;
+    text-align:center;
+  }
+
+  .hidden{ display:none !important; }
+
+  .eyebrow{
+    font-size:13px;
+    letter-spacing:0.28em;
+    text-transform:uppercase;
+    color:var(--accent-gold);
+    margin-bottom:14px;
+    opacity:0.9;
+  }
+
+  h1{
+    font-family:'Caveat', cursive;
+    font-weight:700;
+    font-size:clamp(38px, 8vw, 62px);
+    line-height:1.05;
+    margin:0 0 10px;
+    color:var(--text-cream);
+    text-shadow:0 0 24px rgba(255,143,171,0.35);
+  }
+
+  .sub{
+    max-width:420px;
+    color:var(--text-dim);
+    font-size:16px;
+    line-height:1.6;
+    margin:0 0 30px;
+  }
+
+  button.cta{
+    appearance:none;
+    border:none;
+    cursor:pointer;
+    font-family:'Quicksand', sans-serif;
+    font-weight:700;
+    font-size:16px;
+    letter-spacing:0.02em;
+    color:var(--bg-deep);
+    background:linear-gradient(135deg, var(--accent-gold), var(--accent-pink));
+    padding:14px 34px;
+    border-radius:999px;
+    box-shadow:0 8px 24px rgba(255,79,121,0.35);
+    transition:transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  button.cta:hover{ transform:translateY(-2px); box-shadow:0 12px 30px rgba(255,79,121,0.45); }
+  button.cta:active{ transform:translateY(0px); }
+  button.cta:focus-visible{ outline:3px solid var(--text-cream); outline-offset:3px; }
+
+  button.ghost{
+    appearance:none;
+    border:1.5px solid rgba(255,249,242,0.35);
+    background:transparent;
+    color:var(--text-cream);
+    font-family:'Quicksand', sans-serif;
+    font-weight:600;
+    font-size:14px;
+    padding:10px 22px;
+    border-radius:999px;
+    cursor:pointer;
+    margin-top:22px;
+    transition:background 0.2s ease, border-color 0.2s ease;
+  }
+  button.ghost:hover{ background:rgba(255,249,242,0.08); border-color:rgba(255,249,242,0.6); }
+  button.ghost:focus-visible{ outline:3px solid var(--text-cream); outline-offset:3px; }
+
+  /* Puzzle */
+  #puzzle-wrap{
+    width:360px;
+    height:360px;
+    transform-origin:top center;
+    position:relative;
+  }
+
+  #puzzle-grid{
+    width:360px;
+    height:360px;
+    display:grid;
+    grid-template-columns:repeat(3, 120px);
+    grid-template-rows:repeat(3, 120px);
+    gap:3px;
+    border-radius:18px;
+    overflow:hidden;
+    box-shadow:0 0 0 1px rgba(255,255,255,0.06), 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  .tile{
+    width:120px;
+    height:120px;
+    background-repeat:no-repeat;
+    cursor:pointer;
+    transition:filter 0.15s ease, transform 0.15s ease;
+    position:relative;
+  }
+  .tile:hover{ filter:brightness(1.15); }
+  .tile.selected{
+    outline:3px solid var(--accent-gold);
+    outline-offset:-3px;
+    filter:brightness(1.25);
+    z-index:2;
+  }
+  .tile.correct::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    box-shadow:inset 0 0 0 2px rgba(255,209,102,0.35);
+  }
+
+  .progress{
+    margin-top:20px;
+    font-size:14px;
+    color:var(--text-dim);
+    letter-spacing:0.03em;
+  }
+  .progress b{ color:var(--accent-gold); }
+
+  .hint{
+    margin-top:6px;
+    font-size:13px;
+    color:var(--text-dim);
+    opacity:0.75;
+  }
+
+  /* Reveal */
+  #reveal-art{
+    width:min(360px, 78vw);
+    height:min(360px, 78vw);
+    border-radius:18px;
+    box-shadow:0 0 60px rgba(255,79,121,0.4), 0 20px 60px rgba(0,0,0,0.5);
+    animation:pulse-glow 3.2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-glow{
+    0%,100%{ box-shadow:0 0 40px rgba(255,79,121,0.3), 0 20px 60px rgba(0,0,0,0.5); }
+    50%{ box-shadow:0 0 70px rgba(255,79,121,0.55), 0 20px 60px rgba(0,0,0,0.5); }
+  }
+
+  #letter{
+    max-width:440px;
+    margin-top:28px;
+  }
+
+  .letter-line{
+    font-size:18px;
+    line-height:1.7;
+    color:var(--text-cream);
+    opacity:0;
+    margin:0 0 4px;
+  }
+  .letter-line.show{
+    animation:fade-up 0.7s ease forwards;
+  }
+
+  .letter-line.script{
+    font-family:'Caveat', cursive;
+    font-size:34px;
+    color:var(--accent-pink);
+    margin-top:14px;
+  }
+
+  @keyframes fade-up{
+    from{ opacity:0; transform:translateY(10px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+
+  #floating-hearts{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:2;
+    overflow:hidden;
+  }
+
+  .fheart{
+    position:absolute;
+    bottom:-40px;
+    font-size:20px;
+    opacity:0.85;
+    animation:float-up linear forwards;
+  }
+
+  @keyframes float-up{
+    to{ transform:translateY(-110vh) translateX(var(--drift, 0px)) rotate(360deg); opacity:0; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .letter-line{ animation:none !important; opacity:1 !important; }
+    #reveal-art{ animation:none !important; }
+    .fheart{ animation:none !important; display:none; }
+    button.cta, .tile{ transition:none !important; }
+  }
+
+  @media (max-width: 420px){
+    h1{ font-size:34px; }
+    .sub{ font-size:15px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="stars-bg"></canvas>
+<div id="floating-hearts"></div>
+
+<!-- INTRO -->
+<section class="stage" id="screen-intro">
+  <p class="eyebrow">Para Adamari</p>
+  <h1>Resuelve mami<br>te amo mi chiquita loca</h1>
+  <p class="sub">Ordena el cielo, pieza por pieza, y vas a encontrar algo que quiero decirte.</p>
+  <button class="cta" id="btn-start">Empezar</button>
+</section>
+
+<!-- PUZZLE -->
+<section class="stage hidden" id="screen-puzzle">
+  <p class="eyebrow">Arma el cielo</p>
+  <h1 style="font-size:clamp(28px,6vw,40px)">Toca dos piezas para intercambiarlas</h1>
+  <div id="puzzle-wrap">
+    <div id="puzzle-grid"></div>
+  </div>
+  <p class="progress"><b id="progress-count">0</b>/9 en su lugar</p>
+  <p class="hint">Pista: busca dónde brilla más fuerte cada estrella ✨</p>
+</section>
+
+<!-- REVEAL -->
+<section class="stage hidden" id="screen-reveal">
+  <img id="reveal-art" alt="Corazón de estrellas formado al armar el rompecabezas">
+  <div id="letter"></div>
+  <button class="ghost" id="btn-restart">Armarlo de nuevo</button>
+</section>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- Fondo de estrellas ambientales ---------- */
+  const canvas = document.getElementById('stars-bg');
+  const ctx = canvas.getContext('2d');
+  let stars = [];
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function resizeCanvas(){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const count = Math.floor((canvas.width * canvas.height) / 9000);
+    stars = Array.from({length: count}, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.3 + 0.3,
+      phase: Math.random() * Math.PI * 2,
+      speed: 0.01 + Math.random() * 0.02
+    }));
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  let t = 0;
+  function drawStars(){
+    ctx.clearRect(0,0,canvas.width, canvas.height);
+    for(const s of stars){
+      const twinkle = reducedMotion ? 0.8 : 0.55 + 0.45 * Math.sin(t * s.speed + s.phase);
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(255,249,242,${twinkle})`;
+      ctx.fill();
+    }
+    t += 1;
+    if(!reducedMotion) requestAnimationFrame(drawStars);
+  }
+  drawStars();
+
+  /* ---------- Generar el arte: corazón de constelación ---------- */
+  const ART_SIZE = 360;
+
+  function heartPoint(tt){
+    // curva de corazón paramétrica
+    const x = 16 * Math.pow(Math.sin(tt), 3);
+    const y = 13*Math.cos(tt) - 5*Math.cos(2*tt) - 2*Math.cos(3*tt) - Math.cos(4*tt);
+    return { x, y };
+  }
+
+  function buildArtSVG(){
+    const cx = ART_SIZE/2, cy = ART_SIZE/2 + 6;
+    const scale = 9.6;
+
+    // contorno suave del corazón (muchos puntos)
+    let outline = [];
+    const N = 120;
+    for(let i=0;i<=N;i++){
+      const tt = (i/N) * Math.PI * 2;
+      const p = heartPoint(tt);
+      outline.push([cx + p.x*scale, cy - p.y*scale]);
+    }
+    let pathD = `M ${outline[0][0].toFixed(1)} ${outline[0][1].toFixed(1)} `;
+    for(let i=1;i<outline.length;i++){
+      pathD += `L ${outline[i][0].toFixed(1)} ${outline[i][1].toFixed(1)} `;
+    }
+    pathD += 'Z';
+
+    // estrellas principales sobre el contorno (constelación)
+    const starCount = 16;
+    let starEls = '';
+    let lineD = '';
+    let prev = null;
+    for(let i=0;i<starCount;i++){
+      const tt = (i/starCount) * Math.PI * 2;
+      const p = heartPoint(tt);
+      const x = cx + p.x*scale, y = cy - p.y*scale;
+      const r = 1.8 + (i % 3);
+      starEls += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="#FFF9F2" opacity="0.95"/>`;
+      starEls += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(r*3).toFixed(1)}" fill="#FFD166" opacity="0.18"/>`;
+      if(prev){ lineD += `M ${prev[0].toFixed(1)} ${prev[1].toFixed(1)} L ${x.toFixed(1)} ${y.toFixed(1)} `; }
+      prev = [x,y];
+    }
+
+    // estrellas de fondo dispersas (semilla fija para consistencia)
+    let seed = 42;
+    function rnd(){ seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+    let bgStars = '';
+    for(let i=0;i<70;i++){
+      const x = rnd()*ART_SIZE, y = rnd()*ART_SIZE, r = rnd()*1.1 + 0.2;
+      bgStars += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="#ffffff" opacity="${(0.25+rnd()*0.5).toFixed(2)}"/>`;
+    }
+
+    return `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${ART_SIZE}" height="${ART_SIZE}" viewBox="0 0 ${ART_SIZE} ${ART_SIZE}">
+      <defs>
+        <radialGradient id="bg" cx="50%" cy="40%" r="75%">
+          <stop offset="0%" stop-color="#3d1a4a"/>
+          <stop offset="55%" stop-color="#241245"/>
+          <stop offset="100%" stop-color="#12102a"/>
+        </radialGradient>
+        <radialGradient id="glow" cx="50%" cy="50%" r="55%">
+          <stop offset="0%" stop-color="#ff4d79" stop-opacity="0.55"/>
+          <stop offset="100%" stop-color="#ff4d79" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="blur1"><feGaussianBlur stdDeviation="6"/></filter>
+      </defs>
+      <rect width="${ART_SIZE}" height="${ART_SIZE}" fill="url(#bg)"/>
+      ${bgStars}
+      <circle cx="${cx}" cy="${cy}" r="120" fill="url(#glow)"/>
+      <path d="${pathD}" fill="none" stroke="#ff8fab" stroke-width="1.4" opacity="0.5" filter="url(#blur1)"/>
+      <path d="${lineD}" stroke="#ffd166" stroke-width="0.8" opacity="0.55" fill="none"/>
+      ${starEls}
+      <text x="${cx}" y="${ART_SIZE - 22}" text-anchor="middle" font-family="Georgia, serif" font-size="15" fill="#fff9f2" opacity="0.8" letter-spacing="2">ADAMARI</text>
+    </svg>`;
+  }
+
+  const artSVG = buildArtSVG();
+  const artURI = 'data:image/svg+xml;utf8,' + encodeURIComponent(artSVG);
+
+  document.getElementById('reveal-art').src = artURI;
+
+  /* ---------- Rompecabezas ---------- */
+  const COLS = 3, ROWS = 3, TILE = 120;
+  const grid = document.getElementById('puzzle-grid');
+  let current = [];
+  let selected = null;
+
+  function sliceStyle(idx){
+    const col = idx % COLS, row = Math.floor(idx / COLS);
+    return `background-image:url("${artURI}");background-size:${ART_SIZE}px ${ART_SIZE}px;background-position:-${col*TILE}px -${row*TILE}px;`;
+  }
+
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    // evitar que salga ya resuelto o casi resuelto
+    const correctCount = a.filter((v,i)=>v===i).length;
+    if(correctCount >= 7) return shuffle(arr);
+    return a;
+  }
+
+  function renderGrid(){
+    grid.innerHTML = '';
+    current.forEach((sliceIdx, pos) => {
+      const el = document.createElement('div');
+      el.className = 'tile' + (sliceIdx === pos ? ' correct' : '');
+      el.setAttribute('style', sliceStyle(sliceIdx));
+      el.setAttribute('role','button');
+      el.setAttribute('tabindex','0');
+      el.setAttribute('aria-label', `Pieza en posición ${pos+1}`);
+      el.dataset.pos = pos;
+      el.addEventListener('click', onTileClick);
+      el.addEventListener('keydown', (e) => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); onTileClick({currentTarget: el}); }});
+      grid.appendChild(el);
+    });
+    updateProgress();
+  }
+
+  function updateProgress(){
+    const correct = current.filter((v,i)=>v===i).length;
+    document.getElementById('progress-count').textContent = correct;
+    return correct;
+  }
+
+  function onTileClick(e){
+    const el = e.currentTarget;
+    const pos = parseInt(el.dataset.pos, 10);
+
+    if(selected === null){
+      selected = pos;
+      el.classList.add('selected');
+      return;
+    }
+    if(selected === pos){
+      el.classList.remove('selected');
+      selected = null;
+      return;
+    }
+    // swap
+    [current[selected], current[pos]] = [current[pos], current[selected]];
+    selected = null;
+    renderGrid();
+
+    const correct = updateProgress();
+    if(correct === 9){
+      setTimeout(showReveal, 500);
+    }
+  }
+
+  function initPuzzle(){
+    current = shuffle([0,1,2,3,4,5,6,7,8]);
+    selected = null;
+    renderGrid();
+  }
+
+  /* ---------- Escenas ---------- */
+  const screens = {
+    intro: document.getElementById('screen-intro'),
+    puzzle: document.getElementById('screen-puzzle'),
+    reveal: document.getElementById('screen-reveal')
+  };
+
+  function showScreen(name){
+    Object.values(screens).forEach(s => s.classList.add('hidden'));
+    screens[name].classList.remove('hidden');
+  }
+
+  document.getElementById('btn-start').addEventListener('click', () => {
+    initPuzzle();
+    showScreen('puzzle');
+  });
+
+  document.getElementById('btn-restart').addEventListener('click', () => {
+    stopHearts();
+    initPuzzle();
+    showScreen('puzzle');
+  });
+
+  /* ---------- Carta final ---------- */
+  const letterLines = [
+    { text: 'Para mi Chiquita Loca,', cls: '' },
+    { text: 'la que le da color hasta a mis días más grises, con su locura.', cls: '' },
+    { text: 'Sí, a veces explotas como una bomba mi loca hermosa,', cls: '' },
+    { text: 'pero eres mi loca, y no cambiaría eso por nada del mundo.', cls: '' },
+    { text: 'Te amo, Adamari, mi niña loca. 💛', cls: 'script' }
+  ];
+
+  function typeLetter(){
+    const container = document.getElementById('letter');
+    container.innerHTML = '';
+    letterLines.forEach((line, i) => {
+      const p = document.createElement('p');
+      p.className = 'letter-line' + (line.cls ? ' ' + line.cls : '');
+      p.textContent = line.text;
+      container.appendChild(p);
+      setTimeout(() => p.classList.add('show'), 400 + i * 650);
+    });
+  }
+
+  /* ---------- Corazones flotantes ---------- */
+  let heartsInterval = null;
+  function startHearts(){
+    if(reducedMotion) return;
+    const layer = document.getElementById('floating-hearts');
+    heartsInterval = setInterval(() => {
+      const h = document.createElement('div');
+      h.className = 'fheart';
+      h.textContent = ['💛','💗','✨','💫'][Math.floor(Math.random()*4)];
+      const startX = Math.random() * window.innerWidth;
+      const drift = (Math.random() * 160 - 80) + 'px';
+      h.style.left = startX + 'px';
+      h.style.setProperty('--drift', drift);
+      h.style.animationDuration = (6 + Math.random()*4) + 's';
+      layer.appendChild(h);
+      setTimeout(() => h.remove(), 11000);
+    }, 350);
+  }
+  function stopHearts(){
+    if(heartsInterval){ clearInterval(heartsInterval); heartsInterval = null; }
+    document.getElementById('floating-hearts').innerHTML = '';
+  }
+
+  function showReveal(){
+    showScreen('reveal');
+    typeLetter();
+    startHearts();
+  }
+
+})();
+</script>
+</body>
+</html>
